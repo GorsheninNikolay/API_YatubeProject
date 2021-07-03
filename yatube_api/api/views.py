@@ -74,8 +74,8 @@ class FollowViewSet(viewsets.ModelViewSet):
         follow = Follow.objects.filter(
             user=self.request.user, following=following).exists()
         serializer = FollowSerializer(data=request.data)
-        value = not follow and request.user != following and following
-        if serializer.is_valid() and value:
+        true_or_false = not follow and request.user != following and following
+        if serializer.is_valid() and true_or_false:
             serializer.save(user=request.user, following=following)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(status=status.HTTP_400_BAD_REQUEST)
