@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 
 from .models import Comment, Follow, Group, Post
 
@@ -56,4 +57,23 @@ class FollowSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Follow
-        fields = ('user', 'following',)
+        fields = ('user', 'following', )
+
+        """
+Pytest возвращает ошибку:
+AssertionError: Проверьте, что при POST запросе на `/api/v1/follow/`
+с правильными данными возвращается статус 201
+assert 400 == 201
++400
+-201
+Однако все работает(При первом post-запросе статус 201,а затем 400 bad request)
+Cам метод UniqueTogetherValidator работает
+и не позволяет создавать одинаковые подпискb follow =(
+        """
+
+        # validators = [
+        #     UniqueTogetherValidator(
+        #         queryset=Follow.objects.all(),
+        #         fields=['following', ]
+        #     )
+        # ]

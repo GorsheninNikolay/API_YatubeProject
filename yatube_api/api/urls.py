@@ -12,8 +12,8 @@ router_v2.register('group', GroupViewSet)
 router_v2.register('follow', FollowViewSet)
 
 urlpatterns = [
-    path('', include(router_v2.urls)),
-    path('posts/<int:post_id>/', include(router_v2.urls)),
-    path('token/', TokenObtainPairView.as_view()),
-    path('token/refresh/', TokenRefreshView.as_view()),
+    path('v1/', include(router_v2.urls)),
+    path('v1/posts/<int:post_id>/', include(router_v2.urls)),
+    path('v1/token/', TokenObtainPairView.as_view()),
+    path('v1/token/refresh/', TokenRefreshView.as_view()),
 ]

@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from rest_framework import status, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, mixins, status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -13,7 +14,9 @@ from .serializers import (CommentSerializer, FollowSerializer, GroupSerializer,
 User = get_user_model()
 
 
-class GroupViewSet(viewsets.ModelViewSet):
+class GroupViewSet(viewsets.ModelViewSet,
+                   mixins.CreateModelMixin,
+                   mixins.ListModelMixin):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = [IsAuthorOrIsAuthenticatedOrReadOnly]
@@ -26,14 +29,8 @@ class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [IsAuthorOrIsAuthenticatedOrReadOnly]
-
-    def get_queryset(self, *args, **kwargs):
-        queryset = super().get_queryset(*args, **kwargs)
-        group = self.request.query_params.get('group', None)
-        if group is not None:
-            queryset = queryset.filter(
-                group=get_object_or_404(Group, id=group))
-        return queryset
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ('group', )
 
     def perform_create(self, serializer):
         group = get_or_none(Group, title=self.request.data.get('group'))
@@ -55,27 +52,37 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, post=post)
 
 
-class FollowViewSet(viewsets.ModelViewSet):
+class FollowViewSet(viewsets.ModelViewSet,
+                    mixins.CreateModelMixin,
+                    mixins.ListModelMixin):
     queryset = Follow.objects.all()
     serializer_class = FollowSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['user__username', 'following__username', ]
 
     def get_queryset(self, *args, **kwargs):
-        queryset = super().get_queryset(*args, **kwargs).filter(
-            following=self.request.user)
-        search = self.request.query_params.get('search', None)
-        if search is not None:
-            user = User.objects.get(username=search)
-            queryset = queryset.filter(user=user)
-        return queryset
+        queryset = super().get_queryset(*args, **kwargs)
+        return queryset.filter(following=self.request.user)
 
+    # def perform_create(self, serializer):
+    #     following = get_or_none(
+    #         User, username=self.request.data.get('following')
+    #     )
+    #     serializer.save(user=self.request.user, following=following)
+
+    # Пытался сделать все красиво, но pytest не пропускает из-за serializers
+    # Также не могу понять, правильно ли я сделал с CheckConstraint в models
+    # Уже все перепробовал, но так же могу подписываться на самого себя =(
     def create(self, request):
-        following = get_or_none(User, username=request.data.get('following'))
-        follow = Follow.objects.filter(
-            user=self.request.user, following=following).exists()
         serializer = FollowSerializer(data=request.data)
-        true_or_false = not follow and request.user != following and following
-        if serializer.is_valid() and true_or_false:
+        following = get_or_none(
+            User, username=request.data.get('following')
+        )
+        follow = Follow.objects.filter(
+            user=request.user, following=following
+        ).exists()
+        if serializer.is_valid() and not follow and request.user != following:
             serializer.save(user=request.user, following=following)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
