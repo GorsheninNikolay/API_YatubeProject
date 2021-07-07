@@ -1,11 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, mixins, status, viewsets
+from rest_framework import filters, mixins, viewsets
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 
-from .helps import get_or_none
 from .models import Comment, Follow, Group, Post
 from .permissions import IsAuthorOrIsAuthenticatedOrReadOnly
 from .serializers import (CommentSerializer, FollowSerializer, GroupSerializer,
@@ -33,8 +31,7 @@ class PostViewSet(viewsets.ModelViewSet):
     filterset_fields = ('group', )
 
     def perform_create(self, serializer):
-        group = get_or_none(Group, title=self.request.data.get('group'))
-        serializer.save(author=self.request.user, group=group)
+        serializer.save(author=self.request.user)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -65,24 +62,5 @@ class FollowViewSet(viewsets.ModelViewSet,
         queryset = super().get_queryset(*args, **kwargs)
         return queryset.filter(following=self.request.user)
 
-    # def perform_create(self, serializer):
-    #     following = get_or_none(
-    #         User, username=self.request.data.get('following')
-    #     )
-    #     serializer.save(user=self.request.user, following=following)
-
-    # Пытался сделать все красиво, но pytest не пропускает из-за serializers
-    # Также не могу понять, правильно ли я сделал с CheckConstraint в models
-    # Уже все перепробовал, но так же могу подписываться на самого себя =(
-    def create(self, request):
-        serializer = FollowSerializer(data=request.data)
-        following = get_or_none(
-            User, username=request.data.get('following')
-        )
-        follow = Follow.objects.filter(
-            user=request.user, following=following
-        ).exists()
-        if serializer.is_valid() and not follow and request.user != following:
-            serializer.save(user=request.user, following=following)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

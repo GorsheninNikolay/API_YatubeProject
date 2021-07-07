@@ -49,24 +49,13 @@ class Follow(models.Model):
         User, on_delete=models.CASCADE, related_name='followings'
     )
 
-
-"""
-E:django.db.utils.IntegrityError: CHECK constraint failed: block_for_yourself
-"""
-#       class Meta:
-#           constraints = [
-#               models.CheckConstraint(
-#                   check=~models.Q(user=models.F('following')),
-#                   name='block_for_yourself'
-#               ),
-# Из-за UniqueConstraint pytest тоже не пропускает, однако
-# UniqueConstraint работает и не позволяет создавать одинаковые
-# Подписки
-"""
-django.db.utils.IntegrityError:
-UNIQUE constraint failed: api_follow.user_id, api_follow.following_id
-"""
-#           models.UniqueConstraint(
-#               fields=['user', 'following'], name='unique_follow'
-#           ),
-#        ]
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=~models.Q(user=models.F('following')),
+                name='block_for_yourself'
+            ),
+            models.UniqueConstraint(
+                fields=['user', 'following'], name='unique_follow'
+            ),
+        ]
