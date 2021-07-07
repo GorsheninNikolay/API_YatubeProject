@@ -12,9 +12,22 @@ from .serializers import (CommentSerializer, FollowSerializer, GroupSerializer,
 User = get_user_model()
 
 
-class GroupViewSet(viewsets.ModelViewSet,
-                   mixins.CreateModelMixin,
-                   mixins.ListModelMixin):
+"""
+Спасибо огромное!!! Все получилось. Все действительно было из-за serializers
+Особенно помогло обсуждение в слаке default=serializers.CurrentDefaultUser()
+Но много странствовал по разным сайтам, но этого нигде не нашел...
+Почему именно так сработало? Можно ли где-то подробнее про это почитать?
+Заранее огромное спасибо =)
+"""
+
+
+class CreateListSet(mixins.CreateModelMixin,
+                    mixins.ListModelMixin,
+                    viewsets.GenericViewSet):
+    pass
+
+
+class GroupViewSet(CreateListSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = [IsAuthorOrIsAuthenticatedOrReadOnly]
@@ -49,9 +62,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, post=post)
 
 
-class FollowViewSet(viewsets.ModelViewSet,
-                    mixins.CreateModelMixin,
-                    mixins.ListModelMixin):
+class FollowViewSet(CreateListSet):
     queryset = Follow.objects.all()
     serializer_class = FollowSerializer
     permission_classes = [IsAuthenticated]
