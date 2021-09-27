@@ -38,7 +38,11 @@ cd ..
 ```
 git clone https://github.com/GorsheninNikolay/API_YatubeProject
 ```
-4. Создание виртуальной среды:
+4. Перейти в каталог:
+```
+cd API_YatubeProject
+```
+6. Создание виртуальной среды:
 ```
 python -m venv venv 
 ```
