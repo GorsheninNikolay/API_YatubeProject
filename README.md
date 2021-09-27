@@ -61,7 +61,11 @@ pip install -r requirements.txt
 ```
 cd yatube_api
 ```
-8. Запуск проекта:
+8. Создать миграции:
+```
+python manage.py migrate
+```
+9. Запуск проекта:
 ```
 python manage.py runserver
 ```
