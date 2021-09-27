@@ -1,4 +1,4 @@
-API_YatubeProject
+API для социальной сети. API_YatubeProject
 ==
 
 Данный проект представляет собой API, написанный по архитектуре REST API, для моего проекта YatubeProject.
